@@ -4,9 +4,27 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+from datetime import datetime
+
+# --- PALETTE DEFINITION ---
+# Matching the "Midnight Teal" aesthetic
+MAIN_TEAL = "#00d4aa"
+DARK_BG = "#0e1117"
+ACCENT_RED = "#ff4b4b"
+CHART_COLORS = ["#00d4aa", "#008a73", "#004d40", "#7ef4da", "#b2fcf0"]
 
 st.set_page_config(page_title="Quant Portfolio Analytics", layout="wide")
-st.title("📊 Quant Portfolio Risk & Performance")
+
+# --- CUSTOM CSS FOR THE WEBSITE LOOK ---
+st.markdown(f"""
+    <style>
+    .main {{ background-color: {DARK_BG}; }}
+    div[data-testid="stMetricValue"] {{ color: {MAIN_TEAL}; }}
+    .stTable {{ background-color: transparent; }}
+    </style>
+    """, unsafe_allow_index=True)
+
+st.title("📊 Portfolio Analytics")
 
 # --- SIDEBAR INPUTS ---
 st.sidebar.header("Portfolio Holdings")
@@ -36,7 +54,7 @@ if st.sidebar.button("Run Analytics"):
         with st.spinner('Downloading market data...'):
             raw_data = yf.download(tickers, period="3y")['Close']
             if raw_data.empty:
-                st.error("❌ No data found! Check symbols (e.g., AAPL, BTC-USD, HSBA.L).")
+                st.error("❌ No data found! Check symbols.")
                 st.stop()
             if isinstance(raw_data, pd.Series):
                 raw_data = raw_data.to_frame()
@@ -46,7 +64,7 @@ if st.sidebar.button("Run Analytics"):
         latest_prices = df.iloc[-1].copy()
         valid_tickers = latest_prices.index.tolist()
 
-        # Currency Correction
+        # Currency Correction for London Stock Exchange
         for t in valid_tickers:
             if t.endswith('.L'):
                 latest_prices[t] = latest_prices[t] / 100
@@ -58,7 +76,7 @@ if st.sidebar.button("Run Analytics"):
         returns = df[valid_tickers].pct_change().dropna()
         port_returns = returns.dot(weights)
 
-        # 1. Performance & Rolling Sharpe
+        # 1. Performance math
         cum_returns = (1 + port_returns).cumprod()
         window = 63
         rf_annual = 0.04
@@ -66,7 +84,7 @@ if st.sidebar.button("Run Analytics"):
         rolling_std = port_returns.rolling(window).std() * np.sqrt(252)
         rolling_sharpe = (rolling_mu - rf_annual) / rolling_std
 
-        # 2. FIXED: Rolling Sortino Calculation
+        # 2. Sortino Calculation
         downside_returns = port_returns.copy()
         downside_returns[downside_returns > 0] = 0
         rolling_downside_std = downside_returns.rolling(window).std() * np.sqrt(252)
@@ -77,25 +95,49 @@ if st.sidebar.button("Run Analytics"):
         drawdown = (cum_returns - running_max) / running_max
         var_95 = np.percentile(port_returns, 5)
 
-        # --- WEB DASHBOARD ---
+        # --- WEB DASHBOARD LAYOUT ---
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Portfolio Value", f"£{total_value:,.2f}")
         col2.metric("Max Drawdown", f"{drawdown.min():.2%}")
         col3.metric("95% Daily VaR", f"{var_95:.2%}")
 
+        st.markdown("---")
+
+        # Main Visualization Row
         st.subheader("Performance & Risk Profile")
         fig_perf = go.Figure()
-        fig_perf.add_trace(go.Scatter(x=cum_returns.index, y=cum_returns, name="Cumulative Growth", line=dict(color="#2ecc71")))
-        fig_perf.add_trace(go.Scatter(x=drawdown.index, y=drawdown, name="Drawdown", fill='tozeroy', line=dict(color="#e74c3c")))
+        fig_perf.add_trace(go.Scatter(
+            x=cum_returns.index, y=cum_returns, 
+            name="Cumulative Growth", 
+            line=dict(color=MAIN_TEAL, width=3)
+        ))
+        fig_perf.add_trace(go.Scatter(
+            x=drawdown.index, y=drawdown, 
+            name="Drawdown", 
+            fill='tozeroy', 
+            line=dict(color=ACCENT_RED, width=1),
+            opacity=0.3
+        ))
+        fig_perf.update_layout(template="plotly_dark", hovermode="x unified", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_perf, use_container_width=True)
 
+        # Secondary Charts Row
         c1, c2 = st.columns(2)
         with c1:
             st.subheader("Asset Allocation")
-            st.plotly_chart(px.pie(values=values, names=values.index, hole=0.4), use_container_width=True)
+            fig_pie = px.pie(
+                values=values, names=values.index, 
+                hole=0.5, 
+                color_discrete_sequence=CHART_COLORS
+            )
+            fig_pie.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
+            st.plotly_chart(fig_pie, use_container_width=True)
+        
         with c2:
-            st.subheader("Rolling Annualized Sharpe Ratio")
-            st.plotly_chart(px.line(rolling_sharpe), use_container_width=True)
+            st.subheader("Rolling Ann. Sharpe Ratio")
+            fig_sharpe = px.line(rolling_sharpe, color_discrete_sequence=[MAIN_TEAL])
+            fig_sharpe.update_layout(template="plotly_dark", showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            st.plotly_chart(fig_sharpe, use_container_width=True)
 
         # --- SUMMARY TABLE ---
         st.subheader("📊 Quantitative Risk & Performance Summary")
@@ -117,3 +159,5 @@ if st.sidebar.button("Run Analytics"):
             "Value": [f"{current_sharpe:.2f}", f"{current_sortino:.2f}", f"{calmar:.2f}", f"{ann_vol:.2%}", f"{var_95:.2%}", f"{cvar_95:.2%}", f"{mdd:.2%}", f"{recovery_days} Days", f"{hit_ratio:.2%}"]
         })
         st.table(summary)
+
+        st.caption(f"Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
