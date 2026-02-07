@@ -168,6 +168,45 @@ if st.sidebar.button("Run Analytics"):
             fig_sharpe.update_layout(template="plotly_dark", showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig_sharpe, use_container_width=True)
 
+
+        # --- NEW: Returns Distribution Chart ---
+        st.subheader("Daily Returns Distribution")
+        
+        # Create Histogram with Plotly
+        fig_dist = go.Figure()
+        
+        # Main histogram
+        fig_dist.add_trace(go.Histogram(
+            x=port_returns,
+            nbinsx=50,
+            name="Daily Returns",
+            marker_color=MAIN_TEAL,
+            opacity=0.75,
+            hovertemplate="Return: %{x:.2%}<br>Frequency: %{y}<extra></extra>"
+        ))
+        
+        # Add a vertical line for VaR
+        fig_dist.add_vline(
+            x=var_95, 
+            line_dash="dash", 
+            line_color=ACCENT_RED, 
+            annotation_text=f"95% VaR ({var_95:.2%})", 
+            annotation_position="top left"
+        )
+        
+        fig_dist.update_layout(
+            template="plotly_dark",
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            xaxis_title="Daily Return (%)",
+            yaxis_title="Frequency",
+            xaxis_tickformat=".1%",
+            showlegend=False
+        )
+        
+        st.plotly_chart(fig_dist, use_container_width=True)
+
+        
         # --- SUMMARY TABLE ---
         st.subheader("📊 Quantitative Risk & Performance Summary")
         
@@ -190,5 +229,6 @@ if st.sidebar.button("Run Analytics"):
         st.table(summary)
 
         st.caption(f"Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
 
 
