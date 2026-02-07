@@ -260,7 +260,41 @@ if st.sidebar.button("Run Analytics"):
         })
         st.table(summary)
 
+
+        # --- NEW: ASSET CORRELATION MATRIX ---
+        st.markdown("---")
+        st.subheader("🔗 Asset Correlation Matrix")
+        st.write("Measures how closely assets move together. +1.0 (Green) means they move in lockstep, 0.0 means no relationship, and -1.0 means they move in opposite directions.")
+
+        # Calculate correlation matrix
+        corr_matrix = returns.corr()
+
+        # Generate Heatmap with Plotly
+        fig_corr = go.Figure(data=go.Heatmap(
+            z=corr_matrix.values,
+            x=corr_matrix.columns,
+            y=corr_matrix.index,
+            colorscale='RdYlGn',  # Red-Yellow-Green (Red=Low, Green=High)
+            zmin=-1, zmax=1,
+            hovertemplate="Asset 1: %{y}<br>Asset 2: %{x}<br>Correlation: %{z:.2f}<extra></extra>"
+        ))
+
+        fig_corr.update_layout(
+            template="plotly_dark",
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            height=600 if len(tickers) < 20 else 800, # Scale height for many assets
+            margin=dict(t=30, b=10, l=10, r=10)
+        )
+
+        st.plotly_chart(fig_corr, use_container_width=True)
+
+
+
+
+        
         st.caption(f"Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
 
 
 
