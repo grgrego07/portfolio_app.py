@@ -13,16 +13,45 @@ DARK_BG = "#0e1117"
 ACCENT_RED = "#ff4b4b"
 CHART_COLORS = ["#00d4aa", "#008a73", "#004d40", "#7ef4da", "#b2fcf0"]
 
-st.set_page_config(page_title="Portfolio Analytics", layout="wide")
+st.set_page_config(
+    page_title="Quant Portfolio Analytics",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items=None
+)
 
-# --- CUSTOM CSS FOR THE WEBSITE LOOK ---
+# --- FORCED DARK CSS ---
 st.markdown(f"""
-    <style>
-    .main {{ background-color: {DARK_BG}; }}
-    div[data-testid="stMetricValue"] {{ color: {MAIN_TEAL}; }}
-    .stTable {{ background-color: transparent; }}
-    </style>
-    """, unsafe_allow_html=True)
+<style>
+    /* Main App Background */
+    .stApp {{
+        background-color: #0e1117;
+        color: #ffffff;
+    }}
+    /* Sidebar Background */
+    section[data-testid="stSidebar"] {{
+        background-color: #161b22 !important;
+    }}
+    /* Metric Card Styling */
+    [data-testid="stMetricValue"] {{
+        color: #00d4aa !important;
+        font-weight: bold;
+    }}
+    [data-testid="stMetricLabel"] {{
+        color: #8b949e !important;
+    }}
+    /* Make tables transparent to show background */
+    .stTable {{
+        background-color: transparent !important;
+        color: #ffffff !important;
+    }}
+    /* Title and Header colors */
+    h1, h2, h3 {{
+        color: #00d4aa !important;
+    }}
+</style>
+""", unsafe_allow_html=True)
+
 
 st.title("📊 Portfolio Analytics")
 
@@ -161,4 +190,5 @@ if st.sidebar.button("Run Analytics"):
         st.table(summary)
 
         st.caption(f"Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
 
