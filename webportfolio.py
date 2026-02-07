@@ -13,7 +13,7 @@ DARK_BG = "#0e1117"
 ACCENT_RED = "#ff4b4b"
 CHART_COLORS = ["#00d4aa", "#008a73", "#004d40", "#7ef4da", "#b2fcf0"]
 
-st.set_page_config(page_title="Quant Portfolio Analytics", layout="wide")
+st.set_page_config(page_title="Portfolio Analytics", layout="wide")
 
 # --- CUSTOM CSS FOR THE WEBSITE LOOK ---
 st.markdown(f"""
@@ -22,7 +22,7 @@ st.markdown(f"""
     div[data-testid="stMetricValue"] {{ color: {MAIN_TEAL}; }}
     .stTable {{ background-color: transparent; }}
     </style>
-    """, unsafe_allow_index=True)
+    """, unsafe_allow_html=True)
 
 st.title("📊 Portfolio Analytics")
 
@@ -161,3 +161,4 @@ if st.sidebar.button("Run Analytics"):
         st.table(summary)
 
         st.caption(f"Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
