@@ -132,23 +132,55 @@ if st.sidebar.button("Run Analytics"):
 
         st.markdown("---")
 
-        # Main Visualization Row
+        # --- ENHANCED PERFORMANCE & DRAWDOWN SECTION ---
         st.subheader("Performance & Risk Profile")
-        fig_perf = go.Figure()
-        fig_perf.add_trace(go.Scatter(
+        
+        # 1. Growth Chart
+        fig_growth = go.Figure()
+        fig_growth.add_trace(go.Scatter(
             x=cum_returns.index, y=cum_returns, 
             name="Cumulative Growth", 
             line=dict(color=MAIN_TEAL, width=3)
         ))
-        fig_perf.add_trace(go.Scatter(
-            x=drawdown.index, y=drawdown, 
-            name="Drawdown", 
+        fig_growth.update_layout(
+            title="Portfolio Cumulative Growth (Value of £1)",
+            template="plotly_dark", 
+            hovermode="x unified", 
+            paper_bgcolor='rgba(0,0,0,0)', 
+            plot_bgcolor='rgba(0,0,0,0)',
+            yaxis=dict(gridcolor='#232a35'),
+            xaxis=dict(gridcolor='#232a35')
+        )
+        st.plotly_chart(fig_growth, use_container_width=True)
+
+        # 2. Dedicated Drawdown Chart (The "Underwater" Plot)
+        fig_dd = go.Figure()
+        # Multiply by 100 to get percentage
+        drawdown_pct = drawdown * 100
+        
+        fig_dd.add_trace(go.Scatter(
+            x=drawdown_pct.index, y=drawdown_pct, 
+            name="Drawdown (%)", 
             fill='tozeroy', 
-            line=dict(color=ACCENT_RED, width=1),
-            opacity=0.3
+            line=dict(color=ACCENT_RED, width=1.5),
+            hovertemplate="Drawdown: %{y:.2f}%<extra></extra>"
         ))
-        fig_perf.update_layout(template="plotly_dark", hovermode="x unified", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-        st.plotly_chart(fig_perf, use_container_width=True)
+        
+        fig_dd.update_layout(
+            title="Portfolio Underwater Analysis (Drawdown %)",
+            template="plotly_dark", 
+            hovermode="x unified", 
+            paper_bgcolor='rgba(0,0,0,0)', 
+            plot_bgcolor='rgba(0,0,0,0)',
+            yaxis=dict(
+                title="Decline from Peak (%)",
+                gridcolor='#232a35',
+                ticksuffix="%"
+            ),
+            xaxis=dict(gridcolor='#232a35')
+        )
+        st.plotly_chart(fig_dd, use_container_width=True)
+        
 
         # Secondary Charts Row
         c1, c2 = st.columns(2)
@@ -229,6 +261,7 @@ if st.sidebar.button("Run Analytics"):
         st.table(summary)
 
         st.caption(f"Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
 
 
 
